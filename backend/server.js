@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-
+import authRoutes from "./routes/authRoutes.js";
 // Load environment variables from .env
 dotenv.config();
 
@@ -11,7 +11,7 @@ connectDB();
 
 // Create Express app
 const app = express();
-
+app.use("/api/auth", authRoutes);
 // Middleware to parse JSON
 app.use(express.json());
 

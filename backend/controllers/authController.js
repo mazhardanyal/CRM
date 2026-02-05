@@ -1,6 +1,8 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { getAllUsers } from "./userController.js";
+import router from "../routes/authRoutes.js";
 
 export const loginUser = async (req, res) => {
   try {
@@ -57,3 +59,4 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+router.get("/users", protect, authorizeRoles("admin"), getAllUsers);
