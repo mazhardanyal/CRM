@@ -20,6 +20,11 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "User no longer exists" });
     }
 
+// ✅ ADD THIS
+if (!req.user.isActive) {
+  return res.status(403).json({ message: "Account deactivated" });
+}
+
     next();
   } catch (error) {
     console.error(error.message);
