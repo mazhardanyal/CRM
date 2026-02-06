@@ -114,6 +114,154 @@ if (req.user.id === user.id) {
   }
 };
 
+
+// @desc    Reactivate User
+// @route   PUT /api/users/reactivate/:id
+// @access  Admin
+
+export const reactivateUser = async (req, res) => {
+  try {
+    // 1️⃣ Get user id from URL
+    const userId = req.params.id;
+
+    // 2️⃣ Find user in DB
+    const user = await User.findById(userId);
+
+    // 3️⃣ If user not found
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 4️⃣ Prevent admin reactivating himself (optional safety)
+    if (req.user.id === user.id) {
+      return res
+        .status(400)
+        .json({ message: "Admin cannot reactivate himself" });
+    }
+
+    // 5️⃣ Reactivate user
+    user.isActive = true;
+
+    // 6️⃣ Save changes
+    await user.save();
+
+    // 7️⃣ Response
+    res.json({
+      message: "User reactivated successfully",
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+// @desc    Soft delete user
+// @route   DELETE /api/users/:id
+// @access  Admin
+export const deleteUser = async (req, res) => {
+  try {
+    // 1️⃣ Get user ID from URL
+    const userId = req.params.id;
+
+    // 2️⃣ Find user in DB
+    const user = await User.findById(userId);
+
+    // 3️⃣ If user not found
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 4️⃣ Prevent admin deleting himself
+    if (req.user.id === user.id) {
+      return res.status(400).json({ message: "Admin cannot delete himself" });
+    }
+
+    // 5️⃣ Soft delete the user
+    user.deleted = true;
+    user.isActive = false; // prevent login
+
+    // 6️⃣ Save changes
+    await user.save();
+
+    // 7️⃣ Send response
+    res.status(200).json({
+      message: "User deleted successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        deleted: user.deleted,
+      },
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// Admin resets user password
+export const adminResetPassword = async (req, res) => {
+  try {
+    const { password } = req.body; // New password from admin
+    const user = await User.findById(req.params.id); // Get user by ID
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Optional: Validate password strength
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters and contain at least 1 letter and 1 number",
+      });
+    }
+
+    // Hash the password before saving
+    user.password = await bcrypt.hash(password, 10);
+    await user.save();
+
+    res.json({ message: "Password reset successfully for user", user: { id: user._id, name: user.name } });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// User changes own password
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Check if old password is correct
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Old password is incorrect" });
+
+    // Optional: Validate new password
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters and contain at least 1 letter and 1 number",
+      });
+    }
+
+    // Hash new password and save
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // Get single user (admin only)
 export const getSingleUser = async (req, res) => {
   try {
