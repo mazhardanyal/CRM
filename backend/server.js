@@ -5,6 +5,8 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import User from "./models/User.js";
 import bcrypt from "bcryptjs";
+import leadRoutes from "./routes/leadRoutes.js";
+
 // Load environment variables
 dotenv.config();
 
@@ -45,6 +47,8 @@ app.use("/api/auth", authRoutes);
 app.get("/", (req, res) => {
   res.send("CRM API is running...");
 });
+
+app.use("/api/leads", leadRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;
