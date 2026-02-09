@@ -6,6 +6,9 @@ import authRoutes from "./routes/authRoutes.js";
 import User from "./models/User.js";
 import bcrypt from "bcryptjs";
 import leadRoutes from "./routes/leadRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import cron from "node-cron";
+import { generateFollowUpNotifications } from "./controllers/notificationController.js";
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +52,15 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/leads", leadRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+
+// Run every day at 8:00 AM
+cron.schedule("0 8 * * *", () => {
+  console.log("Generating follow-up notifications...");
+  generateFollowUpNotifications();
+});
+
+
 
 // Start server
 const PORT = process.env.PORT || 5000;
