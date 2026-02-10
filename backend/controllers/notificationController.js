@@ -1,38 +1,48 @@
-import Lead from "../models/Lead.js";
+// controllers/notificationController.js
 import Notification from "../models/Notification.js";
+import Lead from "../models/Lead.js";
 
-export const generateFollowUpNotifications = async () => {
+// Send notification function
+export const sendNotification = async ({ userId, leadId, message }) => {
+  try {
+    const notification = new Notification({
+      user: userId,
+      lead: leadId,
+      message
+    });
+    await notification.save();
+  } catch (error) {
+    console.error("Notification error:", error.message);
+  }
+};
+
+// Generate follow-up notifications for leads with followUpDate = today
+export const generateFollowUp = async () => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // 1️⃣ Find all follow-ups due today
-    const leadsDueToday = await Lead.find({
+    const leads = await Lead.find({
       followUpDate: { $gte: today, $lt: tomorrow }
     }).populate("assignedTo", "name email");
 
-    // 2️⃣ Create notifications for each employee
-    for (const lead of leadsDueToday) {
-      // Check if notification already exists to avoid duplicates
-      const exists = await Notification.findOne({
-        lead: lead._id,
-        user: lead.assignedTo._id,
-        message: `Follow-up with ${lead.name} is scheduled today at ${lead.followUpDate.toLocaleTimeString()}`
-      });
+    for (const lead of leads) {
+      if (lead.assignedTo) {
+        const message = `Reminder: Follow-up for lead ${lead.name} is scheduled for today.`;
 
-      if (!exists) {
-        const notification = new Notification({
-          lead: lead._id,
-          user: lead.assignedTo._id,
-          message: `Follow-up with ${lead.name} is scheduled today at ${lead.followUpDate.toLocaleTimeString()}`
+        // send the notification
+        await sendNotification({
+          userId: lead.assignedTo._id,
+          leadId: lead._id,
+          message,
         });
-        await notification.save();
+
+        console.log(`Follow-up notification sent for lead: ${lead.name}`);
       }
     }
-
   } catch (error) {
-    console.error("Error generating notifications:", error.message);
+    console.error("Follow-up generation error:", error.message);
   }
 };

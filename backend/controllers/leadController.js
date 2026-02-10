@@ -1,6 +1,7 @@
 import Lead from "../models/Lead.js";
-import ActivityLog from "../models/ActivityLog.js";
 import mongoose from "mongoose";
+import { logActivity } from "./activityController.js";
+import { sendNotification } from "./notificationController.js";
 
 /* ======================
    CREATE LEAD
@@ -39,6 +40,15 @@ export const createLead = async (req, res) => {
       action: `Lead created`,
     });
 
+    // 🔔 Send notification if assignedTo exists
+    if (assignedTo) {
+      await sendNotification({
+        userId: assignedTo,
+        leadId: lead._id,
+        message: `You have been assigned to lead ${lead.name}`,
+      });
+    }
+
     res.status(201).json(lead);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -70,7 +80,6 @@ export const getLeads = async (req, res) => {
 
 /* ======================
    UPDATE LEAD DETAILS
-   (status, assignedTo, notes, followUpDate)
 ====================== */
 export const updateLead = async (req, res) => {
   try {
@@ -97,6 +106,14 @@ export const updateLead = async (req, res) => {
         leadId: lead._id,
         action: `Assigned to user ${assignedTo}`,
       });
+
+      // 🔔 Send notification
+      await sendNotification({
+        userId: assignedTo,
+        leadId: lead._id,
+        message: `You have been assigned to lead ${lead.name}`,
+      });
+
       lead.assignedTo = new mongoose.Types.ObjectId(assignedTo);
     }
 
@@ -195,9 +212,8 @@ export const searchLeads = async (req, res) => {
 
     let query = {};
 
-    if (req.user.role === "employee") {
-      query.assignedTo = req.user._id;
-    }
+    // Employees see only their leads
+    if (req.user.role === "employee") query.assignedTo = req.user._id;
 
     if (name) query.name = { $regex: name, $options: "i" };
     if (company) query.company = { $regex: company, $options: "i" };
