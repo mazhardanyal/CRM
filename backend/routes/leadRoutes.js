@@ -8,6 +8,7 @@ import { updateLead } from "../controllers/leadController.js";
 import { deleteLead } from "../controllers/leadController.js";
 import { updateLeadStage } from "../controllers/leadController.js";
 import { searchLeads } from "../controllers/leadController.js";
+import { searchLeads } from "../controllers/leadController.js";
 
 router.post("/", protect, createLead);
 router.get("/", protect, getLeads);
@@ -15,4 +16,5 @@ router.put("/:id", protect, updateLead);
 router.delete("/:id", protect, deleteLead);
 router.put("/:id/stage", protect, updateLeadStage);
 router.get("search", protect, searchLeads);
+router.put("/:id/stage", protect, updateLeadStage);
 export default router;
