@@ -79,18 +79,21 @@ export const createUser = async (req, res) => {
 // Get all users (admin only)
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
-    res.status(200).json({
-      message: "Users fetched successfully",
-      count: users.length,
-      users,
-    });
+    let users;
+
+    if (req.user.role === "admin") {
+      users = await User.find({ role: { $in: ["employee", "manager"] } }).select("-password");
+    } else {
+      // non-admin should not see anything or only themselves
+      users = [];
+    }
+
+    res.status(200).json({ message: "Users fetched successfully", count: users.length, users });
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 // Deactivate user (admin only)
 export const deactivateUser = async (req, res) => {
   try {

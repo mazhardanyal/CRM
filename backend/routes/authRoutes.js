@@ -10,11 +10,16 @@ import {
   updateUser,
   reactivateUser
 } from "../controllers/userController.js";
+import { verifyToken } from "../controllers/authController.js";
 import { deleteUser } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/authorizeRoles.js";
 import { changePassword, adminResetPassword } from "../controllers/userController.js";
 
+router.get("/verify", protect, (req, res) => {
+  // If we are here, token is valid
+  res.status(200).json({ success: true, user: req.user });
+});
 // Public route
 router.post("/login", loginUser);
 
