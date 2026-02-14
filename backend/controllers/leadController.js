@@ -189,13 +189,13 @@ export const deleteLead = async (req, res) => {
       return res.status(403).json({ message: "Only admin can delete leads" });
     }
 
-    await lead.remove();
+    await lead.deleteOne();
 
-    await logActivity({
-      userId: req.user._id,
-      leadId: lead._id,
-      action: `Lead deleted`,
-    });
+   await logActivity({
+  userId: req.user._id,
+  leadId: lead._id,
+  action: `Lead deleted`,
+});
 
     res.status(200).json({ message: "Lead deleted successfully" });
   } catch (error) {
