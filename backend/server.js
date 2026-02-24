@@ -3,13 +3,14 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
-import User from "./models/User.js";
-import bcrypt from "bcryptjs";
+import userRoutes from "./routes/userRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js"; // ← add this
 import cron from "node-cron";
 import { generateFollowUp } from "./controllers/notificationController.js";
-import userRoutes from "./routes/userRoutes.js";
+import User from "./models/User.js";
+import bcrypt from "bcryptjs";
 
 // Load environment variables
 dotenv.config();
@@ -19,8 +20,7 @@ connectDB();
 
 const app = express();
 
-
-
+// Create test admin if not exists
 const createTestAdmin = async () => {
   const existing = await User.findOne({ email: "admin@test.com" });
   if (!existing) {
@@ -38,31 +38,27 @@ const createTestAdmin = async () => {
 };
 createTestAdmin();
 
-// Middleware to parse JSON
+// Middleware
 app.use(express.json());
-
-// Enable CORS
 app.use(cors());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/leads", leadRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/notifications", notificationRoutes); // ← mount notifications
 
 // Test route
 app.get("/", (req, res) => {
   res.send("CRM API is running...");
 });
 
-app.use("/api/leads", leadRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-
-app.use("/api/users", userRoutes);
-// Run every day at 8:00 AM
+// Cron job: run every day at 8:00 AM
 cron.schedule("0 8 * * *", () => {
   console.log("Generating follow-up notifications...");
- generateFollowUp();
+  generateFollowUp();
 });
-
-
 
 // Start server
 const PORT = process.env.PORT || 5000;

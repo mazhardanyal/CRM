@@ -20,6 +20,16 @@ export const createLead = async (req, res) => {
       followUpDate,
     } = req.body;
 
+    // ✅ Prepare notes properly (convert string to array object)
+    let formattedNotes = [];
+
+    if (notes && notes.trim() !== "") {
+      formattedNotes.push({
+        text: notes,
+        addedBy: req.user._id,
+      });
+    }
+
     const lead = await Lead.create({
       name,
       email,
@@ -28,7 +38,7 @@ export const createLead = async (req, res) => {
       source,
       status,
       assignedTo,
-      notes,
+      notes: formattedNotes, // ✅ IMPORTANT FIX
       followUpDate,
       createdBy: req.user._id,
     });
@@ -40,7 +50,7 @@ export const createLead = async (req, res) => {
       action: `Lead created`,
     });
 
-    // 🔔 Send notification if assignedTo exists
+    // 🔔 Send notification if assigned
     if (assignedTo) {
       await sendNotification({
         userId: assignedTo,
@@ -54,7 +64,6 @@ export const createLead = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 /* ======================
    GET ALL LEADS
 ====================== */
@@ -118,15 +127,24 @@ export const updateLead = async (req, res) => {
     }
 
     // Update notes
-    if (notes) {
-      await logActivity({
-        userId: req.user._id,
-        leadId: lead._id,
-        action: `Note added: ${notes}`,
-      });
-      lead.notes = notes;
-    }
+    // Update notes
+if (notes) {
+  await logActivity({
+    userId: req.user._id,
+    leadId: lead._id,
+    action: `Note added: ${notes}`,
+  });
+  lead.notes = notes;
 
+  // 🔔 Send notification to assigned employee if exists
+  if (lead.assignedTo) {
+    await sendNotification({
+      userId: lead.assignedTo,
+      leadId: lead._id,
+      message: `New note added to lead ${lead.name}: ${notes}`,
+    });
+  }
+}
     // Update followUpDate
     if (followUpDate) {
       await logActivity({
@@ -234,6 +252,62 @@ export const searchLeads = async (req, res) => {
 
     res.status(200).json(leads);
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+export const getSingleLead = async (req, res) => {
+  try {
+    const lead = await Lead.findById(req.params.id)
+      .populate("assignedTo", "name email")
+      .populate("notes.addedBy", "name email");
+
+    if (!lead) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    res.status(200).json(lead);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+export const addNoteToLead = async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    if (!text || text.trim() === "") {
+      return res.status(400).json({ message: "Note text is required" });
+    }
+
+    const lead = await Lead.findById(req.params.id);
+
+    if (!lead) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    // ✅ FIX: Ensure notes is always an array
+    if (!Array.isArray(lead.notes)) {
+      lead.notes = [];
+    }
+
+    const newNote = {
+      text,
+      addedBy: req.user._id,
+    };
+
+    lead.notes.push(newNote);
+
+    await logActivity({
+      userId: req.user._id,
+      leadId: lead._id,
+      action: `Note added: ${text}`,
+    });
+
+    await lead.save();
+
+    res.status(200).json({ message: "Note added successfully" });
+
+  } catch (error) {
+    console.error("ADD NOTE ERROR:", error); // 👈 important for debugging
     res.status(500).json({ message: error.message });
   }
 };

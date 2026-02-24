@@ -6,7 +6,7 @@ import AddLead from "./pages/AddLead";
 import Leads from "./pages/Leads";
 import Users from "./pages/Users";
 
-
+import LeadDetails from "./pages/LeadDetails";
 function App() {
   return (
     <BrowserRouter>
@@ -25,7 +25,7 @@ function App() {
         />
 <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
 
-
+<Route path="/lead/:id" element={<LeadDetails />} />
 
 <Route path="/users" element={<Users />} />
         {/* Redirect any unknown routes to login */}

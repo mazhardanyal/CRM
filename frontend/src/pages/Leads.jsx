@@ -44,28 +44,23 @@ function Leads() {
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {leads.map((lead, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 transition cursor-pointer">
-                <td className="px-6 py-4 whitespace-nowrap">{lead.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{lead.company}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 rounded text-white ${
-                    lead.status === "New" ? "bg-blue-500" :
-                    lead.status === "Contacted" ? "bg-green-500" :
-                    lead.status === "Demo Scheduled" ? "bg-yellow-500" :
-                    lead.status === "Negotiation" ? "bg-indigo-500" :
-                    lead.status === "Won" ? "bg-green-700" :
-                    "bg-red-500"
-                  }`}>
-                    {lead.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">{lead.assignedTo?.name || "Unassigned"}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{lead.followUpDate ? new Date(lead.followUpDate).toLocaleDateString() : "-"}</td>
-              </tr>
-            ))}
-          </tbody>
+         <tbody className="bg-white divide-y divide-gray-200">
+  {leads.map((lead, idx) => (
+    <tr
+      key={idx}
+      className="hover:bg-gray-50 transition cursor-pointer"
+      onClick={() => navigate(`/lead/${lead._id}`)}
+    >
+      <td className="px-6 py-4 whitespace-nowrap">{lead.name}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{lead.email}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{lead.phone}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{lead.company}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{lead.status}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{lead.assignedTo?.name || "Unassigned"}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{lead.followUpDate ? new Date(lead.followUpDate).toLocaleDateString() : "-"}</td>
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
     </Layout>

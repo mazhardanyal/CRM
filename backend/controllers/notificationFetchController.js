@@ -1,10 +1,10 @@
-// controllers/notificationFetchController.js
 import Notification from "../models/Notification.js";
 
+// Get notifications for logged-in user
 export const getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ user: req.user._id })
-      .sort({ date: -1 })
+      .sort({ timestamp: -1 })
       .populate("lead", "name status");
 
     res.status(200).json(notifications);
@@ -12,21 +12,17 @@ export const getNotifications = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Mark notification as read
 export const markNotificationRead = async (req, res) => {
   try {
-    const notificationId = req.params.id;
-
-    // Find the notification and ensure it belongs to the logged-in user
     const notification = await Notification.findOne({
-      _id: notificationId,
+      _id: req.params.id,
       user: req.user._id
     });
 
-    if (!notification) {
-      return res.status(404).json({ message: "Notification not found" });
-    }
+    if (!notification) return res.status(404).json({ message: "Notification not found" });
 
-    // Mark as read
     notification.read = true;
     await notification.save();
 
