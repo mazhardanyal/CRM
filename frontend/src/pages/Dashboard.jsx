@@ -40,20 +40,18 @@ function Dashboard() {
   // Fetch notifications
 const fetchNotifications = async () => {
   const token = sessionStorage.getItem("token");
-  if (!token || !user) return;
+  if (!token) return;
 
   try {
     const res = await axios.get("http://localhost:5000/api/notifications", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    console.log("All notifications:", res.data); // debug
+    console.log("All notifications:", res.data);
 
-    const userNotifs = res.data.filter(
-      (n) => n.user.toString() === user._id.toString()
-    );
+    // NO FILTERING NEEDED
+    setNotifications(res.data);
 
-    setNotifications(userNotifs);
   } catch (err) {
     console.error("Failed to fetch notifications:", err.message);
     setNotifications([]);
@@ -229,50 +227,109 @@ const markRead = async (notifId) => {
   <div className="relative">
     <button
       onClick={() => setNotifOpen(!notifOpen)}
-      className="relative p-2 rounded hover:bg-gray-100 transition"
+      className="relative group"
     >
-      🔔
-      {notifications.filter((n) => !n.read).length > 0 && (
-        <span className="absolute top-0 right-0 px-2 py-1 text-xs text-white bg-red-600 rounded-full">
-          {notifications.filter((n) => !n.read).length}
-        </span>
+      <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-md hover:shadow-lg transition duration-300">
+        <span className="text-lg">🔔</span>
+      </div>
+
+      {notifications.some((n) => !n.read) && (
+        <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
       )}
     </button>
 
     {notifOpen && (
-      <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white border rounded shadow-lg z-50">
-        {notifications.length === 0 ? (
-          <p className="p-2 text-gray-500">No notifications</p>
-        ) : (
-          notifications.map((n) => {
-            // Ensure n.user exists before using
-            const isUnread = !n.read;
-            return (
-              <div
-                key={n._id}
-                className={`p-2 border-b cursor-pointer hover:bg-gray-100 ${
-                  isUnread ? "bg-white" : "bg-gray-50"
-                }`}
-                onClick={() => isUnread && markRead(n._id)}
-              >
-                <p className="text-sm">{n.message}</p>
-                {n.lead && (
-                  <p className="text-xs text-gray-400">
-                    Lead: {n.lead.name || "N/A"}, Status: {n.lead.status || "N/A"}
-                  </p>
-                )}
-                <p className="text-xs text-gray-400">
-                  {n.timestamp ? new Date(n.timestamp).toLocaleString() : ""}
-                </p>
+      <>
+        {/* Background blur overlay */}
+        <div
+          className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40"
+          onClick={() => setNotifOpen(false)}
+        />
+
+        {/* Floating Glass Panel */}
+        <div className="absolute right-0 mt-4 w-[420px] max-h-[500px] z-50 
+                        bg-white/70 backdrop-blur-xl 
+                        border border-white/40 
+                        rounded-3xl shadow-2xl 
+                        overflow-hidden 
+                        animate-notifScale">
+
+          {/* Header */}
+          <div className="px-6 py-5 border-b border-white/40 flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Notifications
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                {notifications.length} total
+              </p>
+            </div>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="max-h-[420px] overflow-y-auto custom-scroll">
+
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <div className="text-5xl mb-4 opacity-50">🔕</div>
+                <p className="text-sm">You're all caught up</p>
               </div>
-            );
-          })
-        )}
-      </div>
+            ) : (
+              notifications.map((n) => {
+                const isUnread = !n.read;
+
+                return (
+                  <div
+                    key={n._id}
+                    onClick={() => isUnread && markRead(n._id)}
+                    className={`px-6 py-5 transition-all duration-300 cursor-pointer
+                      ${isUnread
+                        ? "bg-white/80 hover:bg-white"
+                        : "hover:bg-white/60"}
+                    `}
+                  >
+                    <div className="flex gap-4">
+
+                      {/* Left Indicator */}
+                      <div className="flex flex-col items-center pt-1">
+                        {isUnread && (
+                          <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1">
+                        <p className={`text-sm leading-relaxed 
+                          ${isUnread
+                            ? "text-gray-900 font-medium"
+                            : "text-gray-600"}
+                        `}>
+                          {n.message}
+                        </p>
+
+                        {n.lead && (
+                          <div className="mt-2 text-xs text-gray-500">
+                            {n.lead.name} • {n.lead.status}
+                          </div>
+                        )}
+
+                        <div className="mt-3 text-[11px] text-gray-400 tracking-wide uppercase">
+                          {new Date(n.timestamp).toLocaleString()}
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+          </div>
+        </div>
+      </>
     )}
   </div>
-)}
-            <button
+)}            <button
               onClick={handleLogout}
               className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
             >
