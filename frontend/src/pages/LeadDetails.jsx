@@ -58,23 +58,22 @@ function LeadDetails() {
         <h2 className="text-xl font-semibold mb-4">Notes</h2>
 
         {/* Only employees can add notes */}
-        {user.role === "employee" && (
-          <div className="mb-4">
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="border w-full p-2 rounded"
-              placeholder="Add note..."
-            />
-            <button
-              onClick={addNote}
-              className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
-            >
-              Add Note
-            </button>
-          </div>
-        )}
-
+       {["employee", "manager", "admin"].includes(user.role) && (
+  <div className="mb-4">
+    <textarea
+      value={note}
+      onChange={(e) => setNote(e.target.value)}
+      className="border w-full p-2 rounded"
+      placeholder="Add note..."
+    />
+    <button
+      onClick={addNote}
+      className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+    >
+      Add Note
+    </button>
+  </div>
+)}
         {lead.notes?.length === 0 && <p>No notes yet.</p>}
 
         {lead.notes?.map((n, index) => (

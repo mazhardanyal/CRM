@@ -144,24 +144,24 @@ function Users() {
 
   /* ===================== RESET PASSWORD ===================== */
   const handleResetPassword = async () => {
-    const token = sessionStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
 
-    try {
-      await axios.put(
-        `http://localhost:5000/api/reset-password/${selectedUser._id}`,
-        { password: newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  try {
+    await axios.put(
+      `http://localhost:5000/api/users/reset-password/${selectedUser._id}`,
+      { password: newPassword },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      setPasswordOpen(false);
-      setNewPassword("");
-      setSelectedUser(null);
-      alert("Password reset successfully");
-    } catch (err) {
-      alert(err.response?.data?.message || err.message);
-    }
-  };
-
+    setPasswordOpen(false);
+    setNewPassword("");
+    setSelectedUser(null);
+    alert("Password reset successfully");
+    fetchUsers(); // optional: refresh the user list
+  } catch (err) {
+    alert(err.response?.data?.message || err.message);
+  }
+};
   /* ===================== UI ===================== */
   return (
     <Layout active="Users">

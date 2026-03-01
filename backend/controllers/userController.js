@@ -77,18 +77,44 @@ export const createUser = async (req, res) => {
 };
 
 // Get all users (admin only)
+// Get all users
 export const getAllUsers = async (req, res) => {
   try {
     let users;
 
     if (req.user.role === "admin") {
-      users = await User.find({ role: { $in: ["employee", "manager"] } }).select("-password");
+      // Admin sees all users except self
+      users = await User.find({ _id: { $ne: req.user.id } }).select("-password");
+    } else if (req.user.role === "manager") {
+      // Manager sees only employees
+      users = await User.find({ role: "employee" }).select("-password");
     } else {
-      // non-admin should not see anything or only themselves
+      // Other roles see nothing
       users = [];
     }
 
-    res.status(200).json({ message: "Users fetched successfully", count: users.length, users });
+    res.status(200).json({
+      message: "Users fetched successfully",
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// Get assignable users (active & not deleted)
+// Get assignable users (active & not deleted)
+export const getAssignableUsers = async (req, res) => {
+  try {
+    const users = await User.find({
+      isActive: true,
+      deleted: { $ne: true },
+    }).select("name email role"); // only fields we need
+
+    res.status(200).json(users);
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ message: "Server error" });

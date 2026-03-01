@@ -77,8 +77,11 @@ export const getLeads = async (req, res) => {
         .sort({ followUpDate: 1 });
     } else {
       leads = await Lead.find({ assignedTo: req.user._id })
-        .populate("assignedTo", "name email")
-        .sort({ followUpDate: 1 });
+        .populate({
+  path: "assignedTo",
+  select: "name email role",
+  match: { isActive: true, deleted: { $ne: true } } // ✅ Only active users
+})        .sort({ followUpDate: 1 });
     }
 
     res.status(200).json(leads);
@@ -247,8 +250,12 @@ export const searchLeads = async (req, res) => {
     }
 
     const leads = await Lead.find(query)
-      .populate("assignedTo", "name email")
-      .sort({ followUpDate: 1 });
+  .populate({
+    path: "assignedTo",
+    select: "name email role",
+    match: { isActive: true, deleted: { $ne: true } } // ✅ Only active users
+  })
+  .sort({ followUpDate: 1 });
 
     res.status(200).json(leads);
   } catch (error) {

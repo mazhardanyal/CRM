@@ -7,6 +7,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [leads, setLeads] = useState([]);
+  const [profileOpen, setProfileOpen] = useState(false);  
   const [search, setSearch] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -74,16 +75,26 @@ const fetchUsers = async () => {
     setUsers([]); // fallback
   }
 };
+
+
 useEffect(() => {
   if (!user) return;
 
-  fetchLeads();
-  if (user.role === "admin") fetchUsers(); // only admin can fetch users
+  const delay = setTimeout(() => {
+    fetchLeads(search);
+  }, 500);
+
+  return () => clearTimeout(delay);
+}, [search, user]);
+
+useEffect(() => {
+  if (!user) return;
+
+  fetchLeads(); // only call once on page load
+  if (user?.role === "admin" || user?.role === "manager") fetchUsers();
   if (user.role !== "admin") fetchNotifications();
 
-  const interval =
-    user.role !== "admin" ? setInterval(fetchNotifications, 10000) : null;
-
+  const interval = user.role !== "admin" ? setInterval(fetchNotifications, 10000) : null;
   return () => interval && clearInterval(interval);
 }, [user]);
   const handleLogout = () => {
@@ -229,8 +240,8 @@ const markRead = async (notifId) => {
       onClick={() => setNotifOpen(!notifOpen)}
       className="relative group"
     >
-      <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-md hover:shadow-lg transition duration-300">
-        <span className="text-lg">🔔</span>
+      <div className="w-10 border border-red-500 h-10 flex items-center justify-center rounded-full bg-white shadow-md hover:shadow-lg transition duration-300">
+        <span className="text-lg ">🔔</span>
       </div>
 
       {notifications.some((n) => !n.read) && (
@@ -329,12 +340,31 @@ const markRead = async (notifId) => {
       </>
     )}
   </div>
-)}            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
-            >
-              <FiLogOut /> Logout
-            </button>
+)}           {/* Profile Dropdown */}
+<div className="relative ">
+  <button
+    onClick={() => setProfileOpen(!profileOpen)}
+    className="w-10 h-10 flex border border-red-500 items-center justify-center rounded-full bg-white shadow-md hover:shadow-lg transition duration-300"
+  >
+    <span className="text-lg">{user?.name?.charAt(0)}</span>
+  </button>
+
+  {profileOpen && (
+    <div className="absolute border border-red-500 right-0 border-red-500 mt-2 w-56 bg-white rounded-xl shadow-xl z-50  overflow-hidden">
+      <div className="px-4 py-3  ">
+        <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+        <p className="text-xs text-gray-500">{user?.email}</p>
+        <p className="text-xs  text-gray-500">Role: {user?.role}</p>
+      </div>
+      <button
+        onClick={handleLogout}
+        className="w-full text-left px-4 py-2 text-sm text-red-600  hover:bg-red-50"
+      >
+        Logout
+      </button>
+    </div>
+  )}
+</div>
           </div>
         </div>
 
@@ -395,15 +425,12 @@ const markRead = async (notifId) => {
         {/* Search */}
         <div className="mb-4 flex justify-between">
           <input
-            type="text"
-            placeholder="Search leads..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              fetchLeads(e.target.value);
-            }}
-            className="border px-4 py-2 rounded w-64"
-          />
+  type="text"
+  placeholder="Search leads..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)} // only update state
+  className="border px-4 py-2 rounded w-64"
+/>
         </div>
 
         {/* Leads Table */}
