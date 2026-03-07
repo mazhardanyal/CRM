@@ -93,78 +93,64 @@ export const getLeads = async (req, res) => {
 /* ======================
    UPDATE LEAD DETAILS
 ====================== */
+// UPDATE LEAD DETAILS
 export const updateLead = async (req, res) => {
   try {
     const leadId = req.params.id;
-    const { status, assignedTo, notes, followUpDate } = req.body;
+    const { name, company, status, assignedTo, notes, followUpDate } = req.body;
 
     const lead = await Lead.findById(leadId);
     if (!lead) return res.status(404).json({ message: "Lead not found" });
 
-    // Update status
+    // --- Update name & company ---
+    if (name && name !== lead.name) {
+      await logActivity({ userId: req.user._id, leadId: lead._id, action: `Name changed: "${lead.name}" → "${name}"` });
+      lead.name = name;
+    }
+
+    if (company && company !== lead.company) {
+      await logActivity({ userId: req.user._id, leadId: lead._id, action: `Company changed: "${lead.company}" → "${company}"` });
+      lead.company = company;
+    }
+
+    // --- Update status ---
     if (status && status !== lead.status) {
-      await logActivity({
-        userId: req.user._id,
-        leadId: lead._id,
-        action: `Status changed from ${lead.status} → ${status}`,
-      });
+      await logActivity({ userId: req.user._id, leadId: lead._id, action: `Status changed: ${lead.status} → ${status}` });
       lead.status = status;
     }
 
-    // Update assignedTo
-    if (assignedTo && (!lead.assignedTo || assignedTo !== String(lead.assignedTo))) {
-      await logActivity({
-        userId: req.user._id,
-        leadId: lead._id,
-        action: `Assigned to user ${assignedTo}`,
-      });
+    // --- Update assignedTo ---
+    if (assignedTo !== undefined && String(lead.assignedTo) !== assignedTo) {
+      lead.assignedTo = assignedTo ? new mongoose.Types.ObjectId(assignedTo) : null;
+      await logActivity({ userId: req.user._id, leadId: lead._id, action: `Assigned to: ${assignedTo || "Unassigned"}` });
 
-      // 🔔 Send notification
-      await sendNotification({
-        userId: assignedTo,
-        leadId: lead._id,
-        message: `You have been assigned to lead ${lead.name}`,
-      });
-
-      lead.assignedTo = new mongoose.Types.ObjectId(assignedTo);
+      if (assignedTo) await sendNotification({ userId: assignedTo, leadId: lead._id, message: `You have been assigned to lead ${lead.name}` });
     }
 
-    // Update notes
-    // Update notes
-if (notes) {
-  await logActivity({
-    userId: req.user._id,
-    leadId: lead._id,
-    action: `Note added: ${notes}`,
-  });
-  lead.notes = notes;
+    // --- Add new note if provided ---
+    if (notes && notes.trim() !== "") {
+      if (!Array.isArray(lead.notes)) lead.notes = [];
+      lead.notes.push({ text: notes, addedBy: req.user._id });
 
-  // 🔔 Send notification to assigned employee if exists
-  if (lead.assignedTo) {
-    await sendNotification({
-      userId: lead.assignedTo,
-      leadId: lead._id,
-      message: `New note added to lead ${lead.name}: ${notes}`,
-    });
-  }
-}
-    // Update followUpDate
+      await logActivity({ userId: req.user._id, leadId: lead._id, action: `Note added: ${notes}` });
+
+      if (lead.assignedTo) await sendNotification({ userId: lead.assignedTo, leadId: lead._id, message: `New note: ${notes}` });
+    }
+
+    // --- Update followUpDate ---
     if (followUpDate) {
-      await logActivity({
-        userId: req.user._id,
-        leadId: lead._id,
-        action: `Follow-up date set/changed to ${followUpDate}`,
-      });
       lead.followUpDate = followUpDate;
+      await logActivity({ userId: req.user._id, leadId: lead._id, action: `Follow-up date set/changed to ${followUpDate}` });
     }
 
     const updatedLead = await lead.save();
     res.status(200).json(updatedLead);
+
   } catch (error) {
+    console.error("UPDATE LEAD ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
-
 /* ======================
    UPDATE LEAD STAGE
 ====================== */

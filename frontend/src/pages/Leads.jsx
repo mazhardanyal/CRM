@@ -12,9 +12,9 @@
         const token = sessionStorage.getItem("token");
         if (!token) return;
         try {
-          const res = await axios.get("http://localhost:5000/api/leads/search", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+  const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/leads/search`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
           setLeads(res.data);
         } catch (err) {
           console.error(err.response?.data?.message || err.message);

@@ -26,10 +26,10 @@ function AddLead({ onLeadAdded }) {
       const token = sessionStorage.getItem("token");
       if (!token) return;
 
-      try {
-        const res = await axios.get("http://localhost:5000/api/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+     try {
+  const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
         setEmployees(res.data.users || []); // make sure to get the "users" array
       } catch (err) {
         console.error("Failed to fetch employees:", err.response?.data?.message || err.message);
@@ -58,11 +58,10 @@ function AddLead({ onLeadAdded }) {
       const token = sessionStorage.getItem("token");
 
       const res = await axios.post(
-        "http://localhost:5000/api/leads",
-        form,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
+  `${import.meta.env.VITE_API_URL}/api/leads`,
+  form,
+  { headers: { Authorization: `Bearer ${token}` } }
+);
       alert("Lead created successfully!");
 
       // Update parent if callback exists

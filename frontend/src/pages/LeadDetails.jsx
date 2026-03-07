@@ -12,23 +12,23 @@ function LeadDetails() {
 
   const fetchLead = async () => {
     const token = sessionStorage.getItem("token");
-    const res = await axios.get(`http://localhost:5000/api/leads/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/leads/${id}`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
     setLead(res.data);
   };
 
   const addNote = async () => {
-    if (!note.trim()) return;
-    const token = sessionStorage.getItem("token");
-    await axios.post(
-      `http://localhost:5000/api/leads/${id}/notes`,
-      { text: note },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setNote("");
-    fetchLead();
-  };
+  if (!note.trim()) return;
+  const token = sessionStorage.getItem("token");
+  await axios.post(
+    `${import.meta.env.VITE_API_URL}/api/leads/${id}/notes`,
+    { text: note },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  setNote("");
+  fetchLead();
+};
 
   useEffect(() => {
     fetchLead();

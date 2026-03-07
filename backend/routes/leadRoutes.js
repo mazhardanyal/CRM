@@ -10,14 +10,13 @@ import { updateLeadStage } from "../controllers/leadController.js";
 import { searchLeads } from "../controllers/leadController.js";
 import { getSingleLead, addNoteToLead } from "../controllers/leadController.js";
 router.post("/", protect, createLead);
+router.get("/search", protect, searchLeads);
 router.get("/", protect, getLeads);
+router.get("/:id", protect, getSingleLead);
 router.put("/:id", protect, updateLead);
 router.delete("/:id", protect, deleteLead);
 router.put("/:id/stage", protect, updateLeadStage);
-router.get("/search", protect, searchLeads);
-// Get single lead
-router.get("/:id", protect, getSingleLead);
 
-// Add note
+
 router.post("/:id/notes", protect, addNoteToLead);
 export default router;

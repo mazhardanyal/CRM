@@ -17,7 +17,7 @@ function Layout({ children, active }) {
       {/* Sidebar */}
       <div className={`bg-white border-r shadow-sm ${sidebarOpen ? "w-64" : "w-20"} transition-all duration-300`}>
         <div className="flex items-center justify-between p-6 border-b">
-          <span className={`font-bold text-xl ${!sidebarOpen && "hidden"}`}>MyCRM</span>
+          <span className={`font-bold text-xl ${!sidebarOpen && "hidden"}`}>TechMesh</span>
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-gray-100 rounded transition">
             <FiMenu />
           </button>

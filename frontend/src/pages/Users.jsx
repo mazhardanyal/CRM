@@ -27,11 +27,11 @@ function Users() {
     const token = sessionStorage.getItem("token");
     setLoading(true);
 
-    try {
-      const res = await axios.get(
-        "http://localhost:5000/api/users",
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+   try {
+  const res = await axios.get(
+    `${import.meta.env.VITE_API_URL}/api/users`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
       setUsers(res.data.users);
     } catch (err) {
       console.error(err.response?.data?.message || err.message);
@@ -56,11 +56,11 @@ function Users() {
     setCreating(true);
 
     try {
-      await axios.post(
-        "http://localhost:5000/api/users",
-        form,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  await axios.post(
+    `${import.meta.env.VITE_API_URL}/api/users`,
+    form,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
       setForm({ name: "", email: "", password: "", role: "employee" });
       fetchUsers();
@@ -78,11 +78,11 @@ function Users() {
     const token = sessionStorage.getItem("token");
 
     try {
-      await axios.put(
-        `http://localhost:5000/api/users/deactivate/${id}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  await axios.put(
+    `${import.meta.env.VITE_API_URL}/api/users/deactivate/${id}`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
       fetchUsers();
     } catch (err) {
       alert(err.response?.data?.message || err.message);
@@ -92,12 +92,12 @@ function Users() {
   const handleReactivate = async (id) => {
     const token = sessionStorage.getItem("token");
 
-    try {
-      await axios.put(
-        `http://localhost:5000/api/users/reactivate/${id}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+   try {
+  await axios.put(
+    `${import.meta.env.VITE_API_URL}/api/users/reactivate/${id}`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
       fetchUsers();
     } catch (err) {
       alert(err.response?.data?.message || err.message);
@@ -108,11 +108,11 @@ function Users() {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     const token = sessionStorage.getItem("token");
 
-    try {
-      await axios.delete(
-        `http://localhost:5000/api/users/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+   try {
+  await axios.delete(
+    `${import.meta.env.VITE_API_URL}/api/users/${id}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
       fetchUsers();
     } catch (err) {
       alert(err.response?.data?.message || err.message);
@@ -123,16 +123,16 @@ function Users() {
   const handleUpdateUser = async () => {
     const token = sessionStorage.getItem("token");
 
-    try {
-      await axios.put(
-        `http://localhost:5000/api/users/${selectedUser._id}`,
-        {
-          name: selectedUser.name,
-          email: selectedUser.email,
-          role: selectedUser.role,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+   try {
+  await axios.put(
+    `${import.meta.env.VITE_API_URL}/api/users/${selectedUser._id}`,
+    {
+      name: selectedUser.name,
+      email: selectedUser.email,
+      role: selectedUser.role,
+    },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
       setEditOpen(false);
       setSelectedUser(null);
@@ -146,12 +146,12 @@ function Users() {
   const handleResetPassword = async () => {
   const token = sessionStorage.getItem("token");
 
-  try {
-    await axios.put(
-      `http://localhost:5000/api/users/reset-password/${selectedUser._id}`,
-      { password: newPassword },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+ try {
+  await axios.put(
+    `${import.meta.env.VITE_API_URL}/api/users/reset-password/${selectedUser._id}`,
+    { password: newPassword },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
     setPasswordOpen(false);
     setNewPassword("");

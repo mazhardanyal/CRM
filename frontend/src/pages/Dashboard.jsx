@@ -14,7 +14,6 @@ function Dashboard() {
   const [editingLead, setEditingLead] = useState(null);
   const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
-    
     name: "",
     company: "",
     status: "",
@@ -23,99 +22,110 @@ function Dashboard() {
 
   const user = JSON.parse(sessionStorage.getItem("user"));
 
-  // Fetch leads
+  // ================= FETCH LEADS =================
   const fetchLeads = async (name = "") => {
     const token = sessionStorage.getItem("token");
     if (!token) return;
-    try {
-      const res = await axios.get(
-        `http://localhost:5000/api/leads/search?name=${name}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+
+   try {
+  const url = name.trim()
+    ? `${import.meta.env.VITE_API_URL}/api/leads/search?name=${name}`
+    : `${import.meta.env.VITE_API_URL}/api/leads`;
+
+  const res = await axios.get(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
       setLeads(res.data);
     } catch (err) {
       console.error("Failed to fetch leads:", err.response?.data?.message || err.message);
     }
   };
 
-  // Fetch notifications
-const fetchNotifications = async () => {
-  const token = sessionStorage.getItem("token");
-  if (!token) return;
+  // ================= FETCH NOTIFICATIONS =================
+  const fetchNotifications = async () => {
+    const token = sessionStorage.getItem("token");
+    if (!token) return;
 
   try {
-    const res = await axios.get("http://localhost:5000/api/notifications", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/notifications`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+      console.log("All notifications:", res.data);
 
-    console.log("All notifications:", res.data);
+      setNotifications(res.data);
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err.message);
+      setNotifications([]);
+    }
+  };
 
-    // NO FILTERING NEEDED
-    setNotifications(res.data);
+  // ================= FETCH USERS =================
+  const fetchUsers = async () => {
+    const token = sessionStorage.getItem("token");
+    if (!token) return;
 
-  } catch (err) {
-    console.error("Failed to fetch notifications:", err.message);
-    setNotifications([]);
-  }
-};
- // Fetch users (move this up)
-const fetchUsers = async () => {
-  const token = sessionStorage.getItem("token");
-  if (!token) return;
+   try {
+  const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-  try {
-    const res = await axios.get("http://localhost:5000/api/users", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      setUsers(Array.isArray(res.data) ? res.data : res.data.users || []);
+    } catch (err) {
+      console.error(err.message);
+      setUsers([]);
+    }
+  };
 
-    // Ensure users is always an array
-    setUsers(Array.isArray(res.data) ? res.data : res.data.users || []);
-  } catch (err) {
-    console.error(err.message);
-    setUsers([]); // fallback
-  }
-};
+  // ================= SEARCH LEADS WITH DEBOUNCE =================
+  useEffect(() => {
+    if (!user) return;
 
+    const delay = setTimeout(() => {
+      if (search.trim() === "") {
+        fetchLeads();        // fetch all leads
+      } else {
+        fetchLeads(search);  // fetch filtered leads
+      }
+    }, 500);
 
-useEffect(() => {
-  if (!user) return;
+    return () => clearTimeout(delay);
+  }, [search, user]);
 
-  const delay = setTimeout(() => {
-    fetchLeads(search);
-  }, 500);
+  // ================= INITIAL LOAD =================
+  useEffect(() => {
+    if (!user) return;
 
-  return () => clearTimeout(delay);
-}, [search, user]);
+    fetchLeads(); // only call once on page load
+    if (user?.role === "admin" || user?.role === "manager") fetchUsers();
+    if (user.role !== "admin") fetchNotifications();
 
-useEffect(() => {
-  if (!user) return;
+    const interval = user.role !== "admin" ? setInterval(fetchNotifications, 10000) : null;
+    return () => interval && clearInterval(interval);
+  }, [user]);
 
-  fetchLeads(); // only call once on page load
-  if (user?.role === "admin" || user?.role === "manager") fetchUsers();
-  if (user.role !== "admin") fetchNotifications();
-
-  const interval = user.role !== "admin" ? setInterval(fetchNotifications, 10000) : null;
-  return () => interval && clearInterval(interval);
-}, [user]);
+  // ================= LOGOUT =================
   const handleLogout = () => {
     sessionStorage.removeItem("token");
     sessionStorage.removeItem("user");
     navigate("/login");
   };
 
+  // ================= DELETE LEAD =================
   const handleDelete = async (id) => {
     const token = sessionStorage.getItem("token");
     if (!window.confirm("Delete this lead?")) return;
-    try {
-      await axios.delete(`http://localhost:5000/api/leads/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+   try {
+  await axios.delete(`${import.meta.env.VITE_API_URL}/api/leads/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
       fetchLeads(search);
     } catch (err) {
       alert(err.response?.data?.message || "Delete failed");
     }
   };
 
+  // ================= EDIT LEAD =================
   const handleEdit = (lead) => {
     setEditingLead(lead._id);
     setFormData({
@@ -125,63 +135,63 @@ useEffect(() => {
       assignedTo: lead.assignedTo?._id || "",
     });
   };
-  const handleCancel = () => {
-  setEditingLead(null);
-};
 
+  const handleCancel = () => {
+    setEditingLead(null);
+  };
+
+  // ================= UPDATE LEAD =================
+  // ================= UPDATE LEAD =================
 const handleUpdate = async () => {
   const token = sessionStorage.getItem("token");
 
-  try {
-    // Update the lead first
-    await axios.put(
-      `http://localhost:5000/api/leads/${editingLead}`,
-      formData,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+  if (!editingLead) return;
 
-    // Admin assigns lead -> create notification for employee
-    // Inside handleUpdate, after updating the lead
-if (user.role === "admin" && formData.assignedTo) {
-  await axios.post(
-    "http://localhost:5000/api/notifications",
-    {
-      user: formData.assignedTo, // <-- use 'user' here
-      message: `You have been assigned a lead: ${formData.name}`,
-      leadId: editingLead,
-    },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-}
-    // Reset editing state and refresh data
-    setEditingLead(null);
+  try {
+    // Prepare payload
+    const payload = {
+      name: formData.name,
+      company: formData.company,
+      status: formData.status,
+      assignedTo: formData.assignedTo || null, // send null if unassigned
+    };
+
+    // Send PUT request to backend
+    const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/leads/${editingLead}`, payload, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+
+    console.log("Updated lead:", res.data);
+
+    // Refresh leads
     fetchLeads(search);
 
-    // If the logged-in user is the assigned employee OR not admin, fetch notifications
-    if (user.role !== "admin") {
-      fetchNotifications();
-    }
+    // Clear editing state
+    setEditingLead(null);
+    setFormData({ name: "", company: "", status: "", assignedTo: "" });
+
   } catch (err) {
+    console.error("Failed to update lead:", err.response?.data?.message || err.message);
     alert(err.response?.data?.message || "Update failed");
   }
 };
-// Mark notification as read
-const markRead = async (notifId) => {
-  const token = sessionStorage.getItem("token");
-  if (!token) return;
 
-  try {
-    await axios.put(
-      `http://localhost:5000/api/notifications/${notifId}/read`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    fetchNotifications();
-  } catch (err) {
-    console.error("Failed to mark notification read:", err.message);
-  }
-};
-  return (
+  // ================= MARK NOTIFICATION AS READ =================
+  const markRead = async (notifId) => {
+    const token = sessionStorage.getItem("token");
+    if (!token) return;
+
+   try {
+  await axios.put(
+    `${import.meta.env.VITE_API_URL}/api/notifications/${notifId}/read`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+      fetchNotifications();
+    } catch (err) {
+      console.error("Failed to mark notification read:", err.message);
+    }
+  };  return (
     <div className="flex min-h-screen bg-gray-50 font-sans text-gray-800">
       {/* Sidebar */}
       <div
@@ -424,12 +434,12 @@ const markRead = async (notifId) => {
 
         {/* Search */}
         <div className="mb-4 flex justify-between">
-          <input
+         <input
   type="text"
-  placeholder="Search leads..."
+  placeholder="Search by name..."
   value={search}
-  onChange={(e) => setSearch(e.target.value)} // only update state
-  className="border px-4 py-2 rounded w-64"
+  onChange={(e) => setSearch(e.target.value)}
+  className="border px-3 py-2 rounded"
 />
         </div>
 
